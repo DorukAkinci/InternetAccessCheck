@@ -37,7 +37,7 @@
 
         var _jsonData = [];
         var lineChartData = {
-            labels: [],//["January", "February", "March", "April", "May", "June", "July"],
+            labels: [],//["X1", "X2", "X3", "X4", "X5", "X6", "X7"],
             datasets: [{
                 label: "Response Time",
                 data: [] // Y POINTS
@@ -51,7 +51,7 @@
         $(document).ready(function () {
             console.log(window.performance);
             var loadTimeMS = window.performance.timing.responseEnd - window.performance.timing.requestStart;
-            $("#firstLoad").append("<p>İstek başlangıcı ile sayfanın ilk yüklenmesi arasındaki geçen süre ( Client Process(CPU) Time + Network Latency + Server Response ): " + loadTimeMS + " milisaniye.</p>");
+            $("#firstLoad").append("<p>The time between the first request and response ( Client Process(CPU) Time + Network Latency + Server Response ): " + loadTimeMS + " milliseconds.</p>");
 
             console.log(loadTimeMS);
 
@@ -95,7 +95,7 @@
                 $.get("/Home/HealthCheck", function () {
                 })
                 .done(function (data) {
-                    //$("#data").append("<li style='color:green;'>Sayfanın açılması " + (performance.now() - time).toFixed(0) + " milisaniye sürdü. Server time: " + data + "</li>");
+                    //$("#data").append("<li style='color:green;'>Page loaded in " + (performance.now() - time).toFixed(0) + " milliseconds. Server time: " + data + "</li>");
                     _dataPoints.push((performance.now() - time).toFixed(0));
 
                     _dataText[data] = "Connection Status UP"
@@ -106,7 +106,7 @@
                 })
                 .fail(function () {
                     var data = new Date().toString("dd.mm.yyyy HH:mm:ss");
-                    //$("#data").append("<li style='color:red;'>SAYFA AÇILAMADI NETWORK PROBLEMI - " + data + " - FAILED.</li>");
+                    //$("#data").append("<li style='color:red;'>TIMEOUT - " + data + " - FAILED.</li>");
                     _dataPoints.push(5000);
                     lineChartData.datasets[0].data = _dataPoints;
                     _dataText[data] = "Connection Status DOWN"
@@ -121,18 +121,18 @@
     </script>
 }
 
-<div class="container-fluid">
-    <div class="col-xs-12">
-        <div class="col-xs-12"><p>İstek sunucuya ulaştığındaki sunucudaki işlem tarihi: @DateTime.Now.ToLocalTime()</p></div>
-        <div id="firstLoad" class="col-xs-12"></div>
-    </div>
-    @*<div class="col-xs-4">
-        <b>Sayfanın açılması 5 saniye(5000 milisaniye)den uzun sürerse bulunduğunuz ağda network yavaşlığı var demektir ve program tarafından DOWN olarak kabul edilir.</b>
-    </div>*@
-    <div class="col-xs-12">
-        <div id="canvas-holder1" style="width:100%;">
-            <canvas id="chart1" />
+    <div class="container-fluid">
+        <div class="col-xs-12">
+            <div class="col-xs-12"><p>The server local time when the request is processed: @DateTime.Now.ToLocalTime()</p></div>
+            <div id="firstLoad" class="col-xs-12"></div>
         </div>
-        @*<ul id="data"></ul>*@
+        @*<div class="col-xs-4">
+            <b>If the page is not loaded in 5000 milliseconds, the application considers status DOWN(TIMEDOUT) for the datapoint.</b>
+        </div>*@
+        <div class="col-xs-12">
+            <div id="canvas-holder1" style="width:100%;">
+                <canvas id="chart1" />
+            </div>
+            @*<ul id="data"></ul>*@
+        </div>
     </div>
-</div>

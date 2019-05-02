@@ -1,0 +1,138 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+@section scripts{
+    <script src="~/Scripts/Chart.min.js"></script>
+    <script src="~/Scripts/datejs.js"></script>
+    <style>
+        canvas {
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+        }
+
+        #chartjs-tooltip {
+            opacity: 1;
+            position: absolute;
+            background: rgba(0, 0, 0, .7);
+            color: white;
+            border-radius: 3px;
+            -webkit-transition: all .1s ease;
+            transition: all .1s ease;
+            pointer-events: none;
+            -webkit-transform: translate(-50%, 0);
+            transform: translate(-50%, 0);
+        }
+
+        .chartjs-tooltip-key {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var chartEl = document.getElementById("chart1");
+
+        var _jsonData = [];
+        var lineChartData = {
+            labels: [],//["January", "February", "March", "April", "May", "June", "July"],
+            datasets: [{
+                label: "Response Time",
+                data: [] // Y POINTS
+            }]
+        };
+
+        
+        var _dataText = [];
+        var _dataPoints = [];
+
+        $(document).ready(function () {
+            console.log(window.performance);
+            var loadTimeMS = window.performance.timing.responseEnd - window.performance.timing.requestStart;
+            $("#firstLoad").append("<p>İstek başlangıcı ile sayfanın ilk yüklenmesi arasındaki geçen süre ( Client Process(CPU) Time + Network Latency + Server Response ): " + loadTimeMS + " milisaniye.</p>");
+
+            console.log(loadTimeMS);
+
+            $.ajaxSetup({
+                timeout: 5000 // in milliseconds
+            });
+
+
+            lineChartData.datasets[0].data = _dataPoints;
+            window.myLine = new Chart(chartEl, {
+                type: 'line',
+                data: lineChartData,
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Response Time'
+                    },
+                    tooltips: {
+                        enabled: true,
+                        mode: 'single',
+                        callbacks: {
+                            afterBody: function (data) {
+                                var tooltipItems = data[0];
+                                //for (var _type in _tooltipText[tooltipItems.xLabel]) {
+                                //    text.push(_tooltipText[tooltipItems.xLabel][_type].InstanceType + " : " + _tooltipText[tooltipItems.xLabel][_type].Count);
+                                //}
+                                return _dataText[tooltipItems.xLabel];
+                            }
+                        }
+                    }
+                }
+            });
+
+            checkConnection();
+        });
+
+        function checkConnection() {
+            setTimeout(function () {
+                var time = performance.now();
+
+                $.get("/Home/HealthCheck", function () {
+                })
+                .done(function (data) {
+                    //$("#data").append("<li style='color:green;'>Sayfanın açılması " + (performance.now() - time).toFixed(0) + " milisaniye sürdü. Server time: " + data + "</li>");
+                    _dataPoints.push((performance.now() - time).toFixed(0));
+
+                    _dataText[data] = "Connection Status UP"
+
+                    lineChartData.labels.push(data);
+                    lineChartData.datasets[0].data = _dataPoints;
+                    window.myLine.update();
+                })
+                .fail(function () {
+                    var data = new Date().toString("dd.mm.yyyy HH:mm:ss");
+                    //$("#data").append("<li style='color:red;'>SAYFA AÇILAMADI NETWORK PROBLEMI - " + data + " - FAILED.</li>");
+                    _dataPoints.push(5000);
+                    lineChartData.datasets[0].data = _dataPoints;
+                    _dataText[data] = "Connection Status DOWN"
+                    lineChartData.labels.push(data);
+                    window.myLine.update();
+                })
+                .always(function () {
+                    checkConnection();
+                });
+            }, 1000);
+        }
+    </script>
+}
+
+<div class="container-fluid">
+    <div class="col-xs-12">
+        <div class="col-xs-12"><p>İstek sunucuya ulaştığındaki sunucudaki işlem tarihi: @DateTime.Now.ToLocalTime()</p></div>
+        <div id="firstLoad" class="col-xs-12"></div>
+    </div>
+    @*<div class="col-xs-4">
+        <b>Sayfanın açılması 5 saniye(5000 milisaniye)den uzun sürerse bulunduğunuz ağda network yavaşlığı var demektir ve program tarafından DOWN olarak kabul edilir.</b>
+    </div>*@
+    <div class="col-xs-12">
+        <div id="canvas-holder1" style="width:100%;">
+            <canvas id="chart1" />
+        </div>
+        @*<ul id="data"></ul>*@
+    </div>
+</div>
